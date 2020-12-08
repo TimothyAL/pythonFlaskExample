@@ -1,0 +1,59 @@
+version: '3.3'
+
+services:
+  frontend:
+    container_name: flask_example_react_front
+    build:
+      context: ./Frontend
+      dockerfile: dockerfile
+    volumes:
+      - ./Frontend:/urs/src/app
+      - node_modules:/urs/src/app/node_modules
+    environment:
+      - REACT_APP_BACKEND=https://localhost
+      - CHOKIDAR_USE_POLLING=true
+    expose:
+      - 3000
+    stdin_open: true
+    tty: true
+  backend:
+    container_name: flask_example_backend
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      - FLASK_DEBUG=1
+      - FLASK_APP=./app.py
+      - FRONTEND_URL=https://localhost
+      - FLASK_ENV=development
+      - VERIFY_SSL=0
+    expose:
+      - 5000
+    stdin_open: true
+    tty: true
+
+  nginx:
+    container_name: flask_example_nginx
+    build:
+      context: ./nginx
+      dockerfile: dockerfile
+    restart: unless-stopped
+    environment:
+      - CERTBOT_EMAIL=null
+    volumes:
+      - staticfiles:/usr/src/app/staticfiles
+      - mediafiles:/usr/src/app/mediafiles
+      - letsencrypt:/etc/letsencrypt
+    ports:
+      - 443:443
+      - 80:80
+    depends_on:
+      - frontend
+      - backend
+volumes:
+  node_modules:
+  staticfiles:
+  mediafiles:
+  letsencrypt:
